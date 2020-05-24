@@ -72,17 +72,17 @@ for day in enabled_days:
         finishers_rows = races[i].find('table').find_all('tr')
         for row in finishers_rows[1:]:
             row_data = row.find_all('td')
-            if len(row_data) == 0:
+            if len(row_data) < 6:
                 continue
 
             number = row_data[0].getText()
             name = row_data[1].getText()
             jockey = row_data[2].getText()
-            win = row_data[-3].getText().replace('$','')
+            win = row_data[3].getText().replace('$','')
             if win == '': win = '0.00'
-            place = row_data[-2].getText().replace('$', '')
+            place = row_data[4].getText().replace('$', '')
             if place == '': place = '0.00'
-            show = row_data[-1].getText().replace('$', '')
+            show = row_data[5].getText().replace('$', '')
             
             data.append([day, track, i, number, name, jockey, win, place, show])
 
