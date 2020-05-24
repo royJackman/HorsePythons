@@ -1,6 +1,7 @@
+import numpy as np
+
 from bs4 import BeautifulSoup as bs
 from requests_html import HTMLSession
-from tabulate import tabulate
 from urllib.request import urlopen
 
 url_string = 'https://www.offtrackbetting.com/results/73/remington-park-{yyyymmdd}.html'
@@ -38,4 +39,6 @@ for i in range(len(races)):
         
         rows.append([base_date, 'Remington Park', i, number, name, jockey, win, place, show])
 
-print(tabulate(rows))
+rows = np.array(rows)
+with open('data/remingtonParkData.npy', 'wb') as outfile:
+    np.save(outfile, rows)
