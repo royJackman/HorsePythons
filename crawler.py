@@ -31,8 +31,8 @@ track = 'remington_park'
 async def get_page(url, selector):
     browser = await pyppeteer.launch()
     page = await browser.newPage()
-    await page.goto(url)
     try:
+        await page.goto(url)        
         await page.waitForSelector(selector, timeout=10000)
     except pyppeteer.errors.TimeoutError:
         print('Could not find tables on current date')
