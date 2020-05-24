@@ -1,44 +1,60 @@
+import argparse
+import asyncio
+import pyppeteer
 import numpy as np
 
 from bs4 import BeautifulSoup as bs
-from requests_html import HTMLSession
-from urllib.request import urlopen
+from tabulate import tabulate
+
+parser = argparse.ArgumentParser(description='Gather horse race data from offtrackbetting.com')
+parser.add_argument('-o', '--outfile', type=str, dest='outfile', help='Name of the date output file', default='')
+
+args = parser.parse_args()
+outfile = args.outfile
 
 url_string = 'https://www.offtrackbetting.com/results/73/remington-park-{yyyymmdd}.html'
-base_date = 20200523
+base_date = 20200522
 
-# Open HTML session to grab webpage, render the javascript, and create the 
-# BeautifulSoup object for later parsing
-session = HTMLSession()
-html_response = session.get(url_string.format(yyyymmdd = base_date))
-html_response.html.render(timeout=32)
-html_string = bs(html_response.html.html, 'html.parser')
-session.close()
+async def get_page(url, selector):
+    browser = await pyppeteer.launch()
+    page = await browser.newPage()
+    await page.goto(url)
+    try:
+        await page.waitForSelector(selector, timeout=15000)
+    except pyppeteer.errors.TimeoutError:
+        print('Could not find tables')
+    retval = await page.content()
+    await browser.close()
+    return retval
+
+page_data = asyncio.get_event_loop().run_until_complete(get_page(url_string.format(yyyymmdd = base_date), 'td.postposition'))
+
+html_string = bs(page_data, 'html.parser')
 
 races = html_string.find_all('div', id='finishers')
 
-rows = [['date', 'track', 'race', 'number', 'name', 'jockey', 'win', 'place', 'show']]
+data = [['date', 'track', 'race', 'number', 'name', 'jockey', 'win', 'place', 'show']]
 
 # Loop through all races on the page, find the finishers table, parse the data,
 # and save to the data table
 for i in range(len(races)):
     finishers_rows = races[i].find('table').find_all('tr')
     for row in finishers_rows[1:]:
-        data = row.find_all('td')
-        if len(data) == 0:
+        row_data = row.find_all('td')
+        if len(row_data) == 0:
             continue
 
-        number = data[0].getText()
-        name = data[1].getText()
-        jockey = data[2].getText()
-        win = data[-3].getText().replace('$','')
+        number = row_data[0].getText()
+        name = row_data[1].getText()
+        jockey = row_data[2].getText()
+        win = row_data[-3].getText().replace('$','')
         if win == '': win = '0.00'
-        place = data[-2].getText().replace('$', '')
+        place = row_data[-2].getText().replace('$', '')
         if place == '': place = '0.00'
-        show = data[-1].getText().replace('$', '')
+        show = row_data[-1].getText().replace('$', '')
         
-        rows.append([base_date, 'Remington Park', i, number, name, jockey, win, place, show])
+        data.append([base_date, 'Remington Park', i, number, name, jockey, win, place, show])
 
-rows = np.array(rows)
-with open('data/remingtonParkData.npy', 'wb') as outfile:
-    np.save(outfile, rows)
+data = np.array(data)
+with open(outfile if outfile != '' else 'data/output.npy', 'wb') as output:
+    np.save(output, data)
