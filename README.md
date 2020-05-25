@@ -9,3 +9,11 @@
     <li><code>-e END_DATE</code> to set an ending bound for the daterange</li>
     <li><code>-o OUTFILE</code> to write to a specific outfile</li>
 </ul>
+
+<h3>Machine Learning and options</h3>
+<ul>
+    <li><code>python ai.py -t TRAINING_FILE</code> to train using the data in the training file</li>
+    <li><code>-i ITERATIONS</code> to set number of training iterations on data
+    <li><code>-q quiet</code> to only print the final output table</li>
+    <li><code>-v verbose</code> to print extra messages at runtime</li>
+</ul>
