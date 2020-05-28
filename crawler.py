@@ -28,6 +28,8 @@ if start_date > end_date:
 url_string = 'https://www.offtrackbetting.com/results/73/remington-park-{yyyymmdd}.html'
 track = 'remington_park'
 
+# An asynchronous function for grabbing the web page and waiting for the 
+# JavaScript to load the dynamic tables
 async def get_page(url, selector):
     browser = await pyppeteer.launch()
     page = await browser.newPage()
@@ -41,9 +43,10 @@ async def get_page(url, selector):
     return retval
 
 page_data = asyncio.get_event_loop().run_until_complete(get_page(url_string.format(yyyymmdd = base_date), 'script'))
-
 html_string = bs(page_data, 'html.parser')
 
+# Search through the scripts to find the one which contains the previous race
+# dates from the given track
 scripts = html_string.find_all('script')
 regex = re.compile('var enableDays = (.*?);')
 for script in scripts:
@@ -86,6 +89,7 @@ for day in enabled_days:
             
             data.append([day, track, i, number, name, jockey, win, place, show])
 
+# Convert to numpy array and export
 data = np.array(data)
 with open(outfile if outfile != '' else 'data/' + track + ('_s' + str(start_date) if start_date > 19700101 else '') + ('_e' + str(end_date) if end_date < 29991231 else '') + '.npy', 'wb') as output:
     print('Written to', output.name)

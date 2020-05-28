@@ -18,6 +18,7 @@ tfile = args.tfile
 quiet = args.quiet
 verbose = args.verbose
 
+# Set up printing standards
 if quiet and verbose:
     print('Quiet and verbose both set to True, defaulting to quiet')
 
@@ -31,14 +32,14 @@ if horse_data.shape[1] != 9:
 verbose_print('Data loaded from', tfile)
 
 # Clean up data, the row of headers is removed, all rows with an incorrectly
-# parsed numeric value are removed, string data is encoded, and features are
-# scaled to have mean of 0 and stddev of 1.
+# parsed numeric value are removed, string data is encoded
 horse_data = horse_data[1:, :]
 horse_data = horse_data[np.char.isnumeric(horse_data[:, 2])]
 horse_data = horse_data[np.char.isnumeric(horse_data[:, 3])]
 
 horse_data[1:, 2:4] = horse_data[1:, 2:4].astype(np.int)
 
+# Encode the string data for the horse and jockey names
 horse_encoder = preprocessing.LabelEncoder()
 horse_encoder.fit(horse_data[:, 4])
 horse_data[:, 4] = horse_encoder.transform(horse_data[:, 4])
@@ -47,17 +48,20 @@ jockey_encoder = preprocessing.LabelEncoder()
 jockey_encoder.fit(horse_data[:, 5])
 horse_data[:, 5] = jockey_encoder.transform(horse_data[:, 5])
 
+# Make necessary type conversions for easy manipulation
 horse_input = horse_data[:,2:6].astype(np.float)
 horse_output = horse_data[:, 6:].astype(np.float)
 
 verbose_print('Data cleaned')
 
+# Scale the columns independantly to have a mean of 0 and a stddev of 1
 for col in range(horse_input.shape[1]):
     scaler = preprocessing.StandardScaler()
     horse_input[:, col] = scaler.fit_transform(horse_input[:,col].reshape(-1,1)).reshape(1, -1)
 
 verbose_print('Data scaled')
-    
+
+# Define all classifiers for the ensemble
 classifiers = [
     linear_model.PoissonRegressor(warm_start=True),
     linear_model.TweedieRegressor(warm_start=True),
@@ -78,7 +82,7 @@ clf_times = {c.__class__.__name__:[] for c in classifiers}
 
 quiet_print('\n================================================================')
 for i in range(iterations):
-    quiet_print(('Split #' + str(i + 1)).ljust(30), 'Fit time  ', 'Total time', 'Score     |', sep='|')
+    quiet_print(('Split # ' + str(i + 1)).ljust(30), 'Fit time  ', 'Total time', 'Score     |', sep='|')
     quiet_print('----------------------------------------------------------------')
     x_train, x_test, y_train, y_test = model_selection.train_test_split(horse_input, horse_output[:,2], test_size=0.1, random_state = i)
 
